@@ -1,0 +1,31 @@
+{
+  "name": "holiday-tier-list",
+  "version": "1.0.0",
+  "description": "Holiday Tier List Platform - 节日偏好层级列表平台",
+  "main": "api/health.js",
+  "scripts": {
+    "dev": "node backend/server-simple.js",
+    "start": "node backend/server-simple.js",
+    "build": "echo 'Build complete - static files ready'",
+    "vercel-dev": "vercel dev"
+  },
+  "keywords": [
+    "holiday",
+    "tier-list",
+    "ranking",
+    "drag-drop",
+    "chinese-holidays"
+  ],
+  "author": "Holiday Tier List Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "vercel": "^28.0.0"
+  }
+}

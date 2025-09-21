@@ -668,7 +668,11 @@
             };
 
             try {
-                const response = await fetch('http://localhost:5000/api/tier-lists', {
+                const apiUrl = window.location.hostname === 'localhost'
+                    ? 'http://localhost:5000/api/tier-lists'
+                    : '/api/tier-lists';
+
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

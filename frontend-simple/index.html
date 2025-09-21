@@ -351,7 +351,11 @@
             resultDiv.textContent = '正在连接 API...';
 
             try {
-                const response = await fetch('http://localhost:5000/api/health');
+                const apiUrl = window.location.hostname === 'localhost'
+                    ? 'http://localhost:5000/api/health'
+                    : '/api/health';
+
+                const response = await fetch(apiUrl);
                 const data = await response.json();
 
                 resultDiv.innerHTML = `
