@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拖拽节日层级列表 - Holiday Tier List</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* 层级区域样式 */
+        .tier-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .tier-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .tier-row {
+            display: flex;
+            min-height: 100px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .tier-row.drag-over {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .tier-label {
+            width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 1.5rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .tier-s { background: linear-gradient(135deg, #ff6b35, #ff5722); }
+        .tier-a { background: linear-gradient(135deg, #f7931e, #ff9800); }
+        .tier-b { background: linear-gradient(135deg, #ffd100, #ffeb3b); color: #333 !important; }
+        .tier-c { background: linear-gradient(135deg, #90ee90, #4caf50); }
+        .tier-d { background: linear-gradient(135deg, #87ceeb, #2196f3); }
+        .tier-f { background: linear-gradient(135deg, #ff6b6b, #f44336); }
+
+        .tier-content {
+            flex: 1;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            min-height: 100px;
+            gap: 15px;
+            flex-wrap: wrap;
+            border: 3px dashed transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tier-content.drag-over {
+            border-color: #2196f3;
+            background: #e3f2fd;
+        }
+
+        .tier-content.empty {
+            justify-content: center;
+            color: #999;
+            font-style: italic;
+        }
+
+        /* 节假日卡片样式 */
+        .holiday-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 15px;
+            min-width: 120px;
+            text-align: center;
+            cursor: grab;
+            transition: all 0.3s ease;
+            user-select: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .holiday-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            border-color: #2196f3;
+        }
+
+        .holiday-card.dragging {
+            opacity: 0.7;
+            transform: rotate(5deg) scale(1.05);
+            cursor: grabbing;
+            z-index: 1000;
+        }
+
+        .holiday-card .emoji {
+            font-size: 3rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .holiday-card .name {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .holiday-card .date {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        /* 可用节假日池样式 */
+        .holiday-pool {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: 3px dashed transparent;
+            transition: all 0.3s ease;
+        }
+
+        .holiday-pool.drag-over {
+            border-color: #4caf50;
+            background: #e8f5e8;
+            transform: scale(1.02);
+        }
+
+        .holiday-pool h3 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.3rem;
+            text-align: center;
+        }
+
+        .holiday-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+        }
+
+        /* 操作按钮 */
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .btn.secondary {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+        }
+
+        /* 提示信息 */
+        .instructions {
+            background: rgba(255,255,255,0.9);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #333;
+        }
+
+        /* 通知样式 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            z-index: 2000;
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+        }
+
+        .notification.info {
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+        }
+
+        .notification.warning {
+            background: linear-gradient(135deg, #ff9800, #f57400);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .tier-row {
+                flex-direction: column;
+            }
+
+            .tier-label {
+                width: 100%;
+                min-height: 50px;
+            }
+
+            .holiday-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+
+            .notification {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                transform: translateY(-100px);
+            }
+
+            .notification.show {
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 节日偏好层级列表</h1>
+            <p>拖拽下方的法定节假日到对应的等级中</p>
+        </div>
+
+        <div class="instructions">
+            <strong>📝 使用说明：</strong>
+            • 从下方的节假日池中拖拽节假日卡片到上方对应的层级中<br>
+            • 也可以从层级中拖拽节假日卡片回到节假日池<br>
+            • S级为最喜欢，F级为最不喜欢
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="saveToServer()">💾 保存到服务器</button>
+            <button class="btn secondary" onclick="resetTierList()">🔄 重置列表</button>
+            <button class="btn" onclick="exportTierList()">📤 导出JSON</button>
+        </div>
+
+        <!-- 层级区域 -->
+        <div class="tier-container">
+            <div class="tier-list">
+                <div class="tier-row" data-tier="S">
+                    <div class="tier-label tier-s">S 级</div>
+                    <div class="tier-content" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                        <span class="empty-text">拖拽节假日到这里 - 最喜欢的节日</span>
+                    </div>
+                </div>
+
+                <div class="tier-row" data-tier="A">
+                    <div class="tier-label tier-a">A 级</div>
+                    <div class="tier-content" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                        <span class="empty-text">拖拽节假日到这里 - 很喜欢的节日</span>
+                    </div>
+                </div>
+
+                <div class="tier-row" data-tier="B">
+                    <div class="tier-label tier-b">B 级</div>
+                    <div class="tier-content" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                        <span class="empty-text">拖拽节假日到这里 - 比较喜欢的节日</span>
+                    </div>
+                </div>
+
+                <div class="tier-row" data-tier="C">
+                    <div class="tier-label tier-c">C 级</div>
+                    <div class="tier-content" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                        <span class="empty-text">拖拽节假日到这里 - 一般的节日</span>
+                    </div>
+                </div>
+
+                <div class="tier-row" data-tier="D">
+                    <div class="tier-label tier-d">D 级</div>
+                    <div class="tier-content" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                        <span class="empty-text">拖拽节假日到这里 - 不太喜欢的节日</span>
+                    </div>
+                </div>
+
+                <div class="tier-row" data-tier="F">
+                    <div class="tier-label tier-f">F 级</div>
+                    <div class="tier-content" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                        <span class="empty-text">拖拽节假日到这里 - 最不喜欢的节日</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 节假日池 -->
+        <div class="holiday-pool" ondrop="dropToPool(event)" ondragover="allowDropToPool(event)" ondragleave="dragLeavePool(event)">
+            <h3>🎊 法定节假日池</h3>
+            <div class="holiday-grid" id="holidayPool">
+                <!-- 节假日卡片将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 法定节假日数据
+        const holidays = [
+            { id: 'new-year', name: '元旦', emoji: '🎊', date: '1月1日', category: 'national' },
+            { id: 'spring-festival', name: '春节', emoji: '🧧', date: '农历正月初一', category: 'traditional' },
+            { id: 'qingming', name: '清明节', emoji: '🌸', date: '4月4-6日', category: 'traditional' },
+            { id: 'labor-day', name: '劳动节', emoji: '⚒️', date: '5月1日', category: 'national' },
+            { id: 'youth-day', name: '青年节', emoji: '👨‍🎓', date: '5月4日', category: 'commemorative' },
+            { id: 'dragon-boat', name: '端午节', emoji: '🐲', date: '农历五月初五', category: 'traditional' },
+            { id: 'childrens-day', name: '儿童节', emoji: '🧒', date: '6月1日', category: 'commemorative' },
+            { id: 'mid-autumn', name: '中秋节', emoji: '🥮', date: '农历八月十五', category: 'traditional' },
+            { id: 'national-day', name: '国庆节', emoji: '🇨🇳', date: '10月1日', category: 'national' },
+            { id: 'christmas', name: '圣诞节', emoji: '🎄', date: '12月25日', category: 'western' },
+            { id: 'valentines', name: '情人节', emoji: '💕', date: '2月14日', category: 'western' },
+            { id: 'womens-day', name: '妇女节', emoji: '👩', date: '3月8日', category: 'commemorative' },
+            { id: 'teachers-day', name: '教师节', emoji: '👨‍🏫', date: '9月10日', category: 'commemorative' },
+            { id: 'halloween', name: '万圣节', emoji: '🎃', date: '10月31日', category: 'western' }
+        ];
+
+        // 当前拖拽的元素
+        let draggedElement = null;
+
+        // 初始化页面
+        function initializePage() {
+            renderHolidays();
+            updateEmptyStates();
+        }
+
+        // 渲染节假日卡片
+        function renderHolidays() {
+            const pool = document.getElementById('holidayPool');
+            pool.innerHTML = '';
+
+            holidays.forEach(holiday => {
+                const card = createHolidayCard(holiday);
+                pool.appendChild(card);
+            });
+        }
+
+        // 创建节假日卡片
+        function createHolidayCard(holiday) {
+            const card = document.createElement('div');
+            card.className = 'holiday-card';
+            card.draggable = true;
+            card.dataset.holidayId = holiday.id;
+
+            card.innerHTML = `
+                <span class="emoji">${holiday.emoji}</span>
+                <div class="name">${holiday.name}</div>
+                <div class="date">${holiday.date}</div>
+            `;
+
+            // 拖拽事件
+            card.addEventListener('dragstart', function(e) {
+                draggedElement = this;
+                this.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', this.outerHTML);
+            });
+
+            card.addEventListener('dragend', function(e) {
+                this.classList.remove('dragging');
+                draggedElement = null;
+            });
+
+            return card;
+        }
+
+        // 允许拖拽
+        function allowDrop(ev) {
+            ev.preventDefault();
+            ev.target.closest('.tier-content').classList.add('drag-over');
+            ev.target.closest('.tier-row').classList.add('drag-over');
+        }
+
+        // 拖拽离开层级区域
+        function dragLeave(ev) {
+            const tierContent = ev.target.closest('.tier-content');
+            const tierRow = ev.target.closest('.tier-row');
+
+            // 检查是否真的离开了区域
+            if (!tierContent.contains(ev.relatedTarget)) {
+                tierContent.classList.remove('drag-over');
+                tierRow.classList.remove('drag-over');
+            }
+        }
+
+        // 允许拖拽到节假日池
+        function allowDropToPool(ev) {
+            ev.preventDefault();
+            const pool = ev.target.closest('.holiday-pool');
+            pool.classList.add('drag-over');
+        }
+
+        // 拖拽离开节假日池
+        function dragLeavePool(ev) {
+            const pool = ev.target.closest('.holiday-pool');
+
+            // 检查是否真的离开了节假日池区域
+            if (!pool.contains(ev.relatedTarget)) {
+                pool.classList.remove('drag-over');
+            }
+        }
+
+        // 放置到节假日池
+        function dropToPool(ev) {
+            ev.preventDefault();
+
+            const pool = ev.target.closest('.holiday-pool');
+            pool.classList.remove('drag-over');
+
+            if (draggedElement) {
+                const holidayGrid = document.getElementById('holidayPool');
+
+                // 检查是否已经在节假日池中
+                const isInPool = holidayGrid.contains(draggedElement);
+
+                if (!isInPool) {
+                    // 克隆元素并添加到节假日池
+                    const clonedElement = draggedElement.cloneNode(true);
+                    addDragEvents(clonedElement);
+                    holidayGrid.appendChild(clonedElement);
+
+                    // 从原位置移除
+                    draggedElement.remove();
+
+                    // 更新空状态
+                    updateEmptyStates();
+
+                    // 播放成功音效
+                    playSuccessSound();
+
+                    // 显示提示信息
+                    showNotification('✅ 节假日已移回节假日池！', 'success');
+                }
+            }
+        }
+
+        // 放置
+        function drop(ev) {
+            ev.preventDefault();
+
+            const tierContent = ev.target.closest('.tier-content');
+            const tierRow = ev.target.closest('.tier-row');
+
+            tierContent.classList.remove('drag-over');
+            tierRow.classList.remove('drag-over');
+
+            if (draggedElement) {
+                // 移除空状态文本
+                const emptyText = tierContent.querySelector('.empty-text');
+                if (emptyText) {
+                    emptyText.remove();
+                }
+
+                // 克隆元素并添加到新位置
+                const clonedElement = draggedElement.cloneNode(true);
+                addDragEvents(clonedElement);
+                tierContent.appendChild(clonedElement);
+
+                // 从原位置移除
+                draggedElement.remove();
+
+                // 更新空状态
+                updateEmptyStates();
+
+                // 播放成功音效（如果支持）
+                playSuccessSound();
+
+                // 显示提示信息
+                const tierName = tierRow.dataset.tier;
+                showNotification(`✅ 节假日已添加到 ${tierName} 级！`, 'success');
+            }
+        }
+
+        // 为克隆的元素添加拖拽事件
+        function addDragEvents(element) {
+            element.addEventListener('dragstart', function(e) {
+                draggedElement = this;
+                this.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', this.outerHTML);
+            });
+
+            element.addEventListener('dragend', function(e) {
+                this.classList.remove('dragging');
+                draggedElement = null;
+            });
+        }
+
+        // 更新空状态显示
+        function updateEmptyStates() {
+            document.querySelectorAll('.tier-content').forEach(content => {
+                const hasCards = content.querySelectorAll('.holiday-card').length > 0;
+                const hasEmptyText = content.querySelector('.empty-text');
+
+                if (hasCards) {
+                    content.classList.remove('empty');
+                    if (hasEmptyText) {
+                        hasEmptyText.remove();
+                    }
+                } else {
+                    content.classList.add('empty');
+                    if (!hasEmptyText) {
+                        const tier = content.closest('.tier-row').dataset.tier;
+                        const messages = {
+                            'S': '拖拽节假日到这里 - 最喜欢的节日',
+                            'A': '拖拽节假日到这里 - 很喜欢的节日',
+                            'B': '拖拽节假日到这里 - 比较喜欢的节日',
+                            'C': '拖拽节假日到这里 - 一般的节日',
+                            'D': '拖拽节假日到这里 - 不太喜欢的节日',
+                            'F': '拖拽节假日到这里 - 最不喜欢的节日'
+                        };
+
+                        const emptyText = document.createElement('span');
+                        emptyText.className = 'empty-text';
+                        emptyText.textContent = messages[tier];
+                        content.appendChild(emptyText);
+                    }
+                }
+            });
+        }
+
+        // 重置层级列表
+        function resetTierList() {
+            if (confirm('确定要重置层级列表吗？这将移除所有已分类的节假日。')) {
+                // 清空所有层级
+                document.querySelectorAll('.tier-content').forEach(content => {
+                    content.innerHTML = '';
+                });
+
+                // 重新渲染节假日池
+                renderHolidays();
+                updateEmptyStates();
+
+                showNotification('✅ 层级列表已重置！', 'success');
+            }
+        }
+
+        // 导出层级列表
+        function exportTierList() {
+            const tierList = {};
+
+            document.querySelectorAll('.tier-row').forEach(row => {
+                const tier = row.dataset.tier;
+                const cards = row.querySelectorAll('.holiday-card');
+
+                tierList[tier] = Array.from(cards).map(card => {
+                    const holidayId = card.dataset.holidayId;
+                    const holiday = holidays.find(h => h.id === holidayId);
+                    return {
+                        id: holidayId,
+                        name: holiday ? holiday.name : '未知',
+                        emoji: holiday ? holiday.emoji : '❓'
+                    };
+                });
+            });
+
+            const jsonString = JSON.stringify(tierList, null, 2);
+
+            // 创建下载链接
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `holiday-tier-list-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showNotification('📤 层级列表已导出为JSON文件！', 'success');
+        }
+
+        // 保存到服务器
+        async function saveToServer() {
+            const tierList = {};
+
+            document.querySelectorAll('.tier-row').forEach(row => {
+                const tier = row.dataset.tier;
+                const cards = row.querySelectorAll('.holiday-card');
+
+                tierList[tier] = Array.from(cards).map(card => {
+                    const holidayId = card.dataset.holidayId;
+                    const holiday = holidays.find(h => h.id === holidayId);
+                    return {
+                        id: holidayId,
+                        name: holiday ? holiday.name : '未知',
+                        emoji: holiday ? holiday.emoji : '❓',
+                        date: holiday ? holiday.date : '',
+                        category: holiday ? holiday.category : 'unknown'
+                    };
+                });
+            });
+
+            const tierListData = {
+                title: `我的节日偏好排行 - ${new Date().toLocaleDateString()}`,
+                description: '通过拖拽创建的节日偏好层级列表',
+                tiers: Object.keys(tierList).map(tierId => ({
+                    id: tierId,
+                    name: `${tierId} 级`,
+                    color: getTierColor(tierId),
+                    items: tierList[tierId]
+                })),
+                tags: ['节假日', '偏好', '排行'],
+                isPublic: true
+            };
+
+            try {
+                const response = await fetch('http://localhost:5000/api/tier-lists', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(tierListData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showNotification(`✅ 层级列表已成功保存到服务器！列表ID: ${result.id}`, 'success', 5000);
+                } else {
+                    throw new Error(`服务器错误: ${response.status}`);
+                }
+            } catch (error) {
+                showNotification(`❌ 保存失败: ${error.message}。请确保后端服务器正在运行。`, 'warning', 5000);
+            }
+        }
+
+        // 获取层级颜色
+        function getTierColor(tier) {
+            const colors = {
+                'S': '#ff6b35',
+                'A': '#f7931e',
+                'B': '#ffd100',
+                'C': '#90ee90',
+                'D': '#87ceeb',
+                'F': '#ff6b6b'
+            };
+            return colors[tier] || '#cccccc';
+        }
+
+        // 播放成功音效
+        function playSuccessSound() {
+            // 创建简单的音效
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.2);
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'info', duration = 3000) {
+            // 移除现有通知
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+
+            // 创建新通知
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            // 触发显示动画
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+
+            // 自动隐藏
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 300);
+            }, duration);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+</body>
+</html>

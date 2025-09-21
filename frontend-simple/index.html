@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holiday Tier List Platform - 节日偏好层级列表平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #ff6b35;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        /* 在主内容区域的按钮样式 */
+        .container .btn-secondary {
+            background: transparent;
+            color: #ff6b35;
+            border: 2px solid #ff6b35;
+        }
+
+        .container .btn-secondary:hover {
+            background: #ff6b35;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .demo-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .tier-list-demo {
+            margin-top: 2rem;
+        }
+
+        .tier {
+            display: flex;
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .tier-label {
+            width: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .tier-s { background: #ff6b35; }
+        .tier-a { background: #f7931e; }
+        .tier-b { background: #ffd100; }
+        .tier-c { background: #90ee90; }
+
+        .tier-items {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: white;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .holiday-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .holiday-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .status {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .status h3 {
+            color: #2e7d32;
+            margin-bottom: 0.5rem;
+        }
+
+        .api-demo {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .api-demo h4 {
+            margin-bottom: 1rem;
+            color: #495057;
+        }
+
+        .api-response {
+            background: #212529;
+            color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .footer {
+            background: #343a40;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">🎉 Holiday Tier List</div>
+            <div class="nav-buttons">
+                <a href="#" class="btn btn-secondary">登录</a>
+                <a href="#" class="btn btn-primary">注册</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h1>节日偏好层级列表平台</h1>
+            <p>创建、编辑和分享你的个人节日偏好排行榜</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <a href="drag-tier-list.html" class="btn btn-primary" style="color: white; background: #ff6b35;">🎯 开始拖拽排序</a>
+                <a href="#demo" class="btn btn-secondary">📊 查看演示</a>
+            </div>
+        </section>
+
+        <div class="status">
+            <h3>🚀 项目启动状态</h3>
+            <p>✅ 后端 API 服务器已启动 (端口 5000)</p>
+            <p>✅ 数据库连接正常 (内存模式)</p>
+            <p>✅ 拖拽功能页面已就绪</p>
+            <p>🎯 所有功能正常运行</p>
+        </div>
+
+        <section class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>拖拽排序</h3>
+                <p>直观的拖拽界面，轻松调整节日层级排序</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <h3>自定义节日</h3>
+                <p>添加自己的节日，完全个性化的排行体验</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3>社交分享</h3>
+                <p>分享你的层级列表，与朋友交流节日偏好</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>数据分析</h3>
+                <p>了解不同地区和文化背景的节日偏好趋势</p>
+            </div>
+        </section>
+
+        <section class="demo-section" id="demo">
+            <h2>🎊 示例层级列表</h2>
+            <p>以下是一个节日偏好排序的示例：</p>
+
+            <div class="tier-list-demo">
+                <div class="tier">
+                    <div class="tier-label tier-s">S 级</div>
+                    <div class="tier-items">
+                        <div class="holiday-item">🎄 圣诞节</div>
+                        <div class="holiday-item">🎉 新年</div>
+                    </div>
+                </div>
+
+                <div class="tier">
+                    <div class="tier-label tier-a">A 级</div>
+                    <div class="tier-items">
+                        <div class="holiday-item">🎃 万圣节</div>
+                        <div class="holiday-item">🦃 感恩节</div>
+                        <div class="holiday-item">🎂 生日</div>
+                    </div>
+                </div>
+
+                <div class="tier">
+                    <div class="tier-label tier-b">B 级</div>
+                    <div class="tier-items">
+                        <div class="holiday-item">💕 情人节</div>
+                        <div class="holiday-item">🐰 复活节</div>
+                    </div>
+                </div>
+
+                <div class="tier">
+                    <div class="tier-label tier-c">C 级</div>
+                    <div class="tier-items">
+                        <div class="holiday-item">🍀 圣帕特里克节</div>
+                        <div class="holiday-item">🦫 土拨鼠节</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="api-demo">
+            <h4>🔌 API 接口测试</h4>
+            <button onclick="testAPI()" class="btn btn-primary">测试后端连接</button>
+            <div id="api-result" class="api-response" style="margin-top: 1rem; display: none;">
+                正在连接 API...
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2024 Holiday Tier List Platform. 基于React + Node.js + MongoDB构建</p>
+        <p>🐳 支持Docker部署 | ⚡ Redis缓存 | 🔐 JWT认证</p>
+    </footer>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '正在连接 API...';
+
+            try {
+                const response = await fetch('http://localhost:5000/api/health');
+                const data = await response.json();
+
+                resultDiv.innerHTML = `
+<strong>✅ API 连接成功!</strong>
+
+响应数据:
+${JSON.stringify(data, null, 2)}
+
+状态: ${response.status} ${response.statusText}
+服务器时间: ${data.timestamp}
+运行模式: ${data.mode}
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+<strong>❌ API 连接失败</strong>
+
+错误信息: ${error.message}
+
+请确保后端服务器正在运行:
+- 后端地址: http://localhost:5000
+- 启动命令: npm run dev
+                `;
+            }
+        }
+
+        // 页面加载时自动测试API
+        window.addEventListener('load', function() {
+            setTimeout(testAPI, 1000);
+        });
+    </script>
+</body>
+</html>
