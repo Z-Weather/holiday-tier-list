@@ -1,11 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer from './authSlice';
 import tierListReducer from './tierListSlice';
 import uiReducer from './uiSlice';
 
 export const store = configureStore({
   reducer: {
-    auth: authReducer,
     tierList: tierListReducer,
     ui: uiReducer
   },

@@ -20,19 +20,16 @@ import {
   Pagination
 } from '@mui/material';
 import {
-  Favorite,
-  FavoriteBorder,
   Visibility,
   Search,
   Add
 } from '@mui/icons-material';
-import { fetchTierLists, toggleLike } from '../store/tierListSlice';
+import { fetchTierLists } from '../store/tierListSlice';
 
 const Home = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { tierLists, pagination, isLoading } = useSelector(state => state.tierList);
-  const { isAuthenticated } = useSelector(state => state.auth);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
@@ -61,13 +58,6 @@ const Home = () => {
     setCurrentPage(value);
   };
 
-  const handleLike = async (tierListId) => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-    dispatch(toggleLike(tierListId));
-  };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -87,17 +77,15 @@ const Home = () => {
           Create and share your holiday preference rankings
         </Typography>
 
-        {!isAuthenticated && (
-          <Button
-            variant="contained"
-            size="large"
-            startIcon={<Add />}
-            onClick={() => navigate('/register')}
-            sx={{ mb: 4 }}
-          >
-            Get Started
-          </Button>
-        )}
+        <Button
+          variant="contained"
+          size="large"
+          startIcon={<Add />}
+          onClick={() => navigate('/create')}
+          sx={{ mb: 4 }}
+        >
+          Get Started
+        </Button>
       </Box>
 
       <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -137,16 +125,14 @@ const Home = () => {
           <Typography variant="h6" color="text.secondary">
             No tier lists found
           </Typography>
-          {isAuthenticated && (
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={() => navigate('/create')}
-              sx={{ mt: 2 }}
-            >
-              Create Your First Tier List
-            </Button>
-          )}
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => navigate('/create')}
+            sx={{ mt: 2 }}
+          >
+            Create Your First Tier List
+          </Button>
         </Box>
       ) : (
         <>
@@ -188,13 +174,8 @@ const Home = () => {
                     </Typography>
 
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Avatar
-                        src={tierList.creator?.avatar}
-                        alt={tierList.creator?.username}
-                        sx={{ width: 24, height: 24, mr: 1 }}
-                      />
                       <Typography variant="caption" color="text.secondary">
-                        by {tierList.creator?.username}
+                        by {tierList.creator || 'Anonymous'}
                       </Typography>
                     </Box>
 
@@ -220,25 +201,6 @@ const Home = () => {
 
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleLike(tierList._id);
-                            }}
-                            disabled={!isAuthenticated}
-                          >
-                            {tierList.stats?.totalLikes > 0 ? (
-                              <Favorite fontSize="small" color="error" />
-                            ) : (
-                              <FavoriteBorder fontSize="small" />
-                            )}
-                          </IconButton>
-                          <Typography variant="caption">
-                            {tierList.stats?.totalLikes || 0}
-                          </Typography>
-                        </Box>
 
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <Visibility fontSize="small" sx={{ mr: 0.5 }} />

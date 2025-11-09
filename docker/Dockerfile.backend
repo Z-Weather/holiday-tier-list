@@ -1,15 +1,38 @@
-FROM node:18-alpine
-
+# 基础镜像
+FROM node:18-alpine AS base
 WORKDIR /app
 
+# 设置用户权限（安全考虑）
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# 复制依赖文件
 COPY package*.json ./
 
-RUN npm ci --only=production
-
-COPY . .
-
+# 开发阶段
+FROM base AS development
+ENV NODE_ENV=development
+# 安装所有依赖（包括开发依赖）
+RUN npm ci
+# 切换到非root用户
+USER nodejs
+# 复制应用代码
+COPY --chown=nodejs:nodejs . .
+# 暴露端口
 EXPOSE 5000
+# 启动开发服务器
+CMD ["npm", "run", "dev"]
 
-USER node
-
+# 生产阶段
+FROM base AS production
+ENV NODE_ENV=production
+# 只安装生产依赖，清理缓存减小镜像体积
+RUN npm ci --only=production && npm cache clean --force
+# 切换到非root用户
+USER nodejs
+# 复制应用代码
+COPY --chown=nodejs:nodejs . .
+# 暴露端口
+EXPOSE 5000
+# 启动生产服务器
 CMD ["npm", "start"]

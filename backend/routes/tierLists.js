@@ -1,8 +1,6 @@
 const express = require('express');
 const { body, validationResult, query } = require('express-validator');
 const TierList = require('../models/TierList');
-const User = require('../models/User');
-const auth = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -47,7 +45,6 @@ router.get('/', [
     const skip = (page - 1) * limit;
 
     const tierLists = await TierList.find(query)
-      .populate('creator', 'username avatar')
       .sort(sortOptions)
       .skip(skip)
       .limit(limit)
@@ -72,8 +69,7 @@ router.get('/', [
 
 router.get('/:id', async (req, res) => {
   try {
-    const tierList = await TierList.findById(req.params.id)
-      .populate('creator', 'username avatar bio stats');
+    const tierList = await TierList.findById(req.params.id);
 
     if (!tierList) {
       return res.status(404).json({ message: 'Tier list not found' });
@@ -89,7 +85,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', auth, [
+router.post('/', [
   body('title').trim().isLength({ min: 1, max: 100 }).withMessage('Title must be 1-100 characters'),
   body('description').optional().trim().isLength({ max: 1000 }).withMessage('Description cannot exceed 1000 characters'),
   body('tiers').isArray().withMessage('Tiers must be an array'),
@@ -102,12 +98,12 @@ router.post('/', auth, [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { title, description, tiers, tags, isPublic, template } = req.body;
+    const { title, description, tiers, tags, isPublic, template, creator } = req.body;
 
     const tierList = new TierList({
       title,
       description,
-      creator: req.user._id,
+      creator: creator || 'Anonymous',
       tiers,
       tags: tags || [],
       isPublic: isPublic !== undefined ? isPublic : true,
@@ -115,11 +111,6 @@ router.post('/', auth, [
     });
 
     await tierList.save();
-    await tierList.populate('creator', 'username avatar');
-
-    await User.findByIdAndUpdate(req.user._id, {
-      $inc: { 'stats.tierListsCreated': 1 }
-    });
 
     res.status(201).json(tierList);
   } catch (error) {
@@ -128,7 +119,7 @@ router.post('/', auth, [
   }
 });
 
-router.put('/:id', auth, [
+router.put('/:id', [
   body('title').optional().trim().isLength({ min: 1, max: 100 }).withMessage('Title must be 1-100 characters'),
   body('description').optional().trim().isLength({ max: 1000 }).withMessage('Description cannot exceed 1000 characters'),
   body('tiers').optional().isArray().withMessage('Tiers must be an array'),
@@ -147,10 +138,6 @@ router.put('/:id', auth, [
       return res.status(404).json({ message: 'Tier list not found' });
     }
 
-    if (tierList.creator.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to edit this tier list' });
-    }
-
     const { title, description, tiers, tags, isPublic } = req.body;
 
     if (title !== undefined) tierList.title = title;
@@ -160,7 +147,6 @@ router.put('/:id', auth, [
     if (isPublic !== undefined) tierList.isPublic = isPublic;
 
     await tierList.save();
-    await tierList.populate('creator', 'username avatar');
 
     res.json(tierList);
   } catch (error) {
@@ -169,7 +155,7 @@ router.put('/:id', auth, [
   }
 });
 
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const tierList = await TierList.findById(req.params.id);
 
@@ -177,15 +163,7 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Tier list not found' });
     }
 
-    if (tierList.creator.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to delete this tier list' });
-    }
-
     await TierList.findByIdAndDelete(req.params.id);
-
-    await User.findByIdAndUpdate(req.user._id, {
-      $inc: { 'stats.tierListsCreated': -1 }
-    });
 
     res.json({ message: 'Tier list deleted successfully' });
   } catch (error) {
@@ -194,62 +172,6 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-router.post('/:id/like', auth, async (req, res) => {
-  try {
-    const tierList = await TierList.findById(req.params.id);
 
-    if (!tierList) {
-      return res.status(404).json({ message: 'Tier list not found' });
-    }
-
-    const liked = tierList.toggleLike(req.user._id);
-    await tierList.save();
-
-    res.json({
-      liked,
-      totalLikes: tierList.stats.totalLikes
-    });
-  } catch (error) {
-    console.error('Toggle like error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-router.get('/user/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
-    const tierLists = await TierList.find({
-      creator: userId,
-      isPublic: true
-    })
-      .populate('creator', 'username avatar')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
-
-    const total = await TierList.countDocuments({
-      creator: userId,
-      isPublic: true
-    });
-
-    res.json({
-      tierLists,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (error) {
-    console.error('Get user tier lists error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
 
 module.exports = router;

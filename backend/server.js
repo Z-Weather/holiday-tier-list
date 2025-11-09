@@ -27,10 +27,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/holiday-t
 .then(() => console.log('MongoDB connected'))
 .catch(err => console.error('MongoDB connection error:', err));
 
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/users', require('./routes/users'));
 app.use('/api/tier-lists', require('./routes/tierLists'));
-app.use('/api/comments', require('./routes/comments'));
 
 app.get('/api/health', (req, res) => {
   res.json({

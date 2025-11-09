@@ -1,0 +1,63 @@
+# Frontend-specific .dockerignore
+
+# Node modules
+node_modules
+
+# Development files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+*.log
+npm-debug.log
+yarn-error.log
+
+# Build outputs
+build
+dist
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+docs/
+
+# Test files
+test/
+tests/
+__tests__/
+*.test.js
+*.spec.js
+
+# Cache
+.cache
+.nyc_output
+
+# ESLint cache
+.eslintcache
+
+# Public folder (will be copied during build)
+public/
+
+# Docker files
+Dockerfile*
+.dockerignore

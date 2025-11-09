@@ -4,7 +4,6 @@ import tierListService from '../services/tierListService';
 const initialState = {
   tierLists: [],
   currentTierList: null,
-  userTierLists: [],
   isLoading: false,
   error: null,
   pagination: {
@@ -75,29 +74,6 @@ export const deleteTierList = createAsyncThunk(
   }
 );
 
-export const toggleLike = createAsyncThunk(
-  'tierList/toggleLike',
-  async (id, { rejectWithValue }) => {
-    try {
-      const response = await tierListService.toggleLike(id);
-      return { id, ...response };
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to toggle like');
-    }
-  }
-);
-
-export const fetchUserTierLists = createAsyncThunk(
-  'tierList/fetchUserTierLists',
-  async ({ page = 1, limit = 10 } = {}, { rejectWithValue }) => {
-    try {
-      const response = await tierListService.getUserTierLists({ page, limit });
-      return response;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch user tier lists');
-    }
-  }
-);
 
 const tierListSlice = createSlice({
   name: 'tierList',
@@ -166,23 +142,9 @@ const tierListSlice = createSlice({
       })
       .addCase(deleteTierList.fulfilled, (state, action) => {
         state.tierLists = state.tierLists.filter(tl => tl._id !== action.payload);
-        state.userTierLists = state.userTierLists.filter(tl => tl._id !== action.payload);
         if (state.currentTierList && state.currentTierList._id === action.payload) {
           state.currentTierList = null;
         }
-      })
-      .addCase(toggleLike.fulfilled, (state, action) => {
-        const { id, liked, totalLikes } = action.payload;
-        const tierList = state.tierLists.find(tl => tl._id === id);
-        if (tierList) {
-          tierList.stats.totalLikes = totalLikes;
-        }
-        if (state.currentTierList && state.currentTierList._id === id) {
-          state.currentTierList.stats.totalLikes = totalLikes;
-        }
-      })
-      .addCase(fetchUserTierLists.fulfilled, (state, action) => {
-        state.userTierLists = action.payload.tierLists;
       });
   }
 });

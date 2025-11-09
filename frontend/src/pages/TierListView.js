@@ -14,14 +14,12 @@ import {
   Alert
 } from '@mui/material';
 import {
-  Favorite,
-  FavoriteBorder,
   Share,
   Edit,
   Visibility,
   ArrowBack
 } from '@mui/icons-material';
-import { fetchTierListById, toggleLike, clearCurrentTierList } from '../store/tierListSlice';
+import { fetchTierListById, clearCurrentTierList } from '../store/tierListSlice';
 
 const TierListView = () => {
   const { id } = useParams();
@@ -29,7 +27,6 @@ const TierListView = () => {
   const navigate = useNavigate();
 
   const { currentTierList, isLoading, error } = useSelector(state => state.tierList);
-  const { user, isAuthenticated } = useSelector(state => state.auth);
 
   useEffect(() => {
     if (id) {
@@ -40,14 +37,6 @@ const TierListView = () => {
       dispatch(clearCurrentTierList());
     };
   }, [id, dispatch]);
-
-  const handleLike = () => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-    dispatch(toggleLike(id));
-  };
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -64,10 +53,6 @@ const TierListView = () => {
       navigator.clipboard.writeText(window.location.href);
       alert('Link copied to clipboard!');
     }
-  };
-
-  const handleEdit = () => {
-    navigate(`/edit/${id}`);
   };
 
   const formatDate = (dateString) => {
@@ -106,7 +91,6 @@ const TierListView = () => {
     );
   }
 
-  const isOwner = user && currentTierList.creator && user.id === currentTierList.creator._id;
 
   return (
     <Container maxWidth="lg">
@@ -133,13 +117,8 @@ const TierListView = () => {
               )}
 
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Avatar
-                  src={currentTierList.creator?.avatar}
-                  alt={currentTierList.creator?.username}
-                  sx={{ width: 32, height: 32, mr: 1 }}
-                />
                 <Typography variant="body2" color="text.secondary">
-                  Created by {currentTierList.creator?.username} on {formatDate(currentTierList.createdAt)}
+                  Created by {currentTierList.creator || 'Anonymous'} on {formatDate(currentTierList.createdAt)}
                 </Typography>
               </Box>
 
@@ -153,19 +132,6 @@ const TierListView = () => {
 
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <IconButton onClick={handleLike} disabled={!isAuthenticated}>
-                    {currentTierList.stats?.totalLikes > 0 ? (
-                      <Favorite color="error" />
-                    ) : (
-                      <FavoriteBorder />
-                    )}
-                  </IconButton>
-                  <Typography variant="body2">
-                    {currentTierList.stats?.totalLikes || 0} likes
-                  </Typography>
-                </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Visibility sx={{ mr: 0.5 }} />
                   <Typography variant="body2">
                     {currentTierList.views || 0} views
@@ -178,12 +144,6 @@ const TierListView = () => {
               <IconButton onClick={handleShare} title="Share">
                 <Share />
               </IconButton>
-
-              {isOwner && (
-                <IconButton onClick={handleEdit} title="Edit">
-                  <Edit />
-                </IconButton>
-              )}
             </Box>
           </Box>
 

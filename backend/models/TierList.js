@@ -55,9 +55,8 @@ const tierListSchema = new mongoose.Schema({
     maxlength: [1000, 'Description cannot exceed 1000 characters']
   },
   creator: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: String,
+    default: 'Anonymous'
   },
   tiers: [tierSchema],
   template: {
@@ -73,16 +72,6 @@ const tierListSchema = new mongoose.Schema({
     type: String,
     trim: true,
     lowercase: true
-  }],
-  likes: [{
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now
-    }
   }],
   views: {
     type: Number,
@@ -112,18 +101,5 @@ tierListSchema.index({ 'stats.totalLikes': -1 });
 tierListSchema.index({ views: -1 });
 tierListSchema.index({ createdAt: -1 });
 
-tierListSchema.methods.toggleLike = function(userId) {
-  const existingLike = this.likes.find(like => like.user.toString() === userId.toString());
-
-  if (existingLike) {
-    this.likes = this.likes.filter(like => like.user.toString() !== userId.toString());
-    this.stats.totalLikes = Math.max(0, this.stats.totalLikes - 1);
-    return false;
-  } else {
-    this.likes.push({ user: userId });
-    this.stats.totalLikes += 1;
-    return true;
-  }
-};
 
 module.exports = mongoose.model('TierList', tierListSchema);

@@ -30,7 +30,6 @@ services:
     build:
       context: ./backend
       dockerfile: ../docker/Dockerfile.backend
-      target: production
     container_name: holiday-tier-list-backend
     restart: unless-stopped
     environment:
@@ -45,15 +44,16 @@ services:
     depends_on:
       - mongodb
       - redis
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
     networks:
       - holiday-tier-list-network
 
   frontend:
     build:
-      context: .
-      dockerfile: ./docker/Dockerfile.frontend
-      args:
-        FRONTEND_CONTEXT: ./frontend
+      context: ./frontend
+      dockerfile: ../docker/Dockerfile.frontend
     container_name: holiday-tier-list-frontend
     restart: unless-stopped
     ports:
